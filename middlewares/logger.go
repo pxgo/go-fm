@@ -3,7 +3,7 @@ package middlewares
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/pxgo/GoFM/modules"
+	"github.com/pxgo/go-fm/modules"
 )
 
 func LoggerIn(next echo.HandlerFunc) echo.HandlerFunc {

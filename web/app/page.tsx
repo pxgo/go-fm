@@ -229,7 +229,7 @@ class Home extends React.Component<any, {
                     </div>
                     <audio ref={this.audioRef}></audio>
                     <div className="text-center text-xs text-gray-600">
-                      <Link href={"https://github.com/pxgo/GoFM"} target={"_blank"}>GoFM {serverInfo.version}</Link>
+                      <Link href={"https://github.com/pxgo/go-fm"} target={"_blank"}>GoFM {serverInfo.version}</Link>
                     </div>
                   </div>
                 </>

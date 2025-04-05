@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/pxgo/GoFM/modules"
+	"github.com/pxgo/go-fm/modules"
 	"net/http"
 	"strings"
 	"time"

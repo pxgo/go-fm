@@ -3,7 +3,7 @@ package routes
 import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/pxgo/GoFM/modules"
+	"github.com/pxgo/go-fm/modules"
 	"net/http"
 )
 

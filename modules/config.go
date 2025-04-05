@@ -3,7 +3,7 @@ package modules
 import (
 	"flag"
 	"fmt"
-	"github.com/pxgo/GoFM/conf"
+	"github.com/pxgo/go-fm/conf"
 	"log"
 	"os"
 	"path/filepath"

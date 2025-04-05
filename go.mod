@@ -1,4 +1,4 @@
-module github.com/pxgo/GoFM
+module github.com/pxgo/go-fm
 
 go 1.20
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bogem/id3v2/v2"
 	"github.com/dmulholl/mp3lib"
-	"github.com/pxgo/GoFM/statics"
+	"github.com/pxgo/go-fm/statics"
 	"math/rand"
 	"os"
 	"path/filepath"

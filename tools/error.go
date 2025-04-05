@@ -2,7 +2,7 @@ package tools
 
 import (
 	"fmt"
-	"github.com/pxgo/GoFM/settings"
+	"github.com/pxgo/go-fm/settings"
 	"net/http"
 )
 

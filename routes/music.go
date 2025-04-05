@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/pxgo/GoFM/modules"
-	"github.com/pxgo/GoFM/tools"
+	"github.com/pxgo/go-fm/modules"
+	"github.com/pxgo/go-fm/tools"
 	"net/http"
 )
 
