@@ -8,11 +8,7 @@ GoFM is a cross-platform real-time audio streaming server written in Go. It allo
 [![References](https://img.shields.io/github/forks/pxgo/go-fm?label=references)](https://github.com/pxgo/go-fm/network/members)
 [![License](https://img.shields.io/github/license/pxgo/go-fm)](https://github.com/pxgo/go-fm/blob/main/LICENSE)
 
-<div style="margin:1.5rem 0;border:1px solid #e9e9e9;border-radius:6px;overflow:hidden;">
-  <iframe title="fm.stackstore.net" src="https://fm.stackstore.net" style="width:100%;height:350px;border:0;display:block;" loading="lazy"></iframe>
-</div>
-
-<p style="text-align:center;"><a href="https://fm.stackstore.net" target="_blank" rel="noopener">fm.stackstore.net</a></p>
+![GoFM](./statics/home.png)
 
 ## Usage
 
