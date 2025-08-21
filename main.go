@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-//go:embed web/dist/*
+//go:embed web/*
 var publicFiles embed.FS
 
 func main() {
@@ -32,9 +32,9 @@ func main() {
 
 	var fileSystem http.FileSystem
 	if modules.Config.Debug {
-		fileSystem = http.FS(os.DirFS("web/dist"))
+		fileSystem = http.FS(os.DirFS("web"))
 	} else {
-		fsys, err := fs.Sub(publicFiles, "web/dist")
+		fsys, err := fs.Sub(publicFiles, "web")
 		if err != nil {
 			modules.Logger.Error(err)
 			panic(err)
