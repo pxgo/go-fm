@@ -310,7 +310,10 @@
                     fmInfo: null,
                     playerStatus: 'stopped', // 'loading', 'playing', 'stopped'
                     websocketStatus: 'connecting', // 'connecting', 'connected', 'disconnected'
-                    isMuted: true // 初始为静音状态
+                    isMuted: true, // 初始为静音状态
+                    retryCount: 0, // 重试计数
+                    retryTimer: null, // 重试定时器
+                    isRetrying: false // 是否正在重试中
                 };
                 
                 this.audioPlayer = document.getElementById('audioPlayer');
@@ -415,18 +418,31 @@
             }
 
             mute() {
+                // 清除重试定时器
+                if (this.state.retryTimer) {
+                    clearTimeout(this.state.retryTimer);
+                }
+                
                 this.audioPlayer.pause();
                 this.setState({ 
                     isMuted: true,
-                    playerStatus: 'stopped'
+                    playerStatus: 'stopped',
+                    retryCount: 0,
+                    retryTimer: null,
+                    isRetrying: false
                 });
             }
 
             unmute() {
                 if (!this.state.fmInfo) return;
 
-                // 先取消静音状态，这样用户可以与页面交互
-                this.setState({ isMuted: false });
+                // 清除错误消息和重试计数
+                this.setState({ 
+                    isMuted: false,
+                    errorMessage: '',
+                    retryCount: 0,
+                    isRetrying: false
+                });
                 
                 // 尝试播放音频
                 this.play();
@@ -447,24 +463,155 @@
                 // 设置音量
                 this.audioPlayer.volume = this.state.isMuted ? 0 : 0.8;
 
+                // 添加音频事件监听器
+                this.setupAudioEventListeners();
+
                 this.audioPlayer.play()
                     .then(() => {
-                        this.setState({ playerStatus: 'playing' });
+                        this.setState({ 
+                            playerStatus: 'playing',
+                            retryCount: 0, // 播放成功时重置重试计数
+                            isRetrying: false
+                        });
                     })
                     .catch(err => {
                         console.error('播放失败:', err);
-                        this.setState({ 
-                            playerStatus: 'stopped',
-                            isMuted: true 
-                        });
+                        this.handlePlayError(err);
                     });
             }
 
+            setupAudioEventListeners() {
+                // 移除之前的监听器（如果有的话）
+                this.audioPlayer.removeEventListener('error', this.handleAudioError);
+                this.audioPlayer.removeEventListener('stalled', this.handleAudioStalled);
+                this.audioPlayer.removeEventListener('waiting', this.handleAudioWaiting);
+                this.audioPlayer.removeEventListener('canplay', this.handleAudioCanPlay);
+                this.audioPlayer.removeEventListener('ended', this.handleAudioEnded);
+
+                // 添加新的监听器
+                this.audioPlayer.addEventListener('error', this.handleAudioError.bind(this));
+                this.audioPlayer.addEventListener('stalled', this.handleAudioStalled.bind(this));
+                this.audioPlayer.addEventListener('waiting', this.handleAudioWaiting.bind(this));
+                this.audioPlayer.addEventListener('canplay', this.handleAudioCanPlay.bind(this));
+                this.audioPlayer.addEventListener('ended', this.handleAudioEnded.bind(this));
+            }
+
+            handleAudioError(event) {
+                console.error('音频播放错误:', event);
+                const error = this.audioPlayer.error;
+                let errorMessage = '播放错误';
+                
+                if (error) {
+                    switch (error.code) {
+                        case error.MEDIA_ERR_ABORTED:
+                            errorMessage = '播放被中止';
+                            break;
+                        case error.MEDIA_ERR_NETWORK:
+                            errorMessage = '网络错误';
+                            break;
+                        case error.MEDIA_ERR_DECODE:
+                            errorMessage = '解码错误';
+                            break;
+                        case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                            errorMessage = '音频格式不支持';
+                            break;
+                        default:
+                            errorMessage = '未知播放错误';
+                    }
+                }
+                
+                this.handlePlayError(new Error(errorMessage));
+            }
+
+            handleAudioStalled(event) {
+                console.warn('音频播放卡住:', event);
+                // 如果卡住超过10秒，触发重试
+                setTimeout(() => {
+                    if (this.state.playerStatus === 'loading' && !this.state.isRetrying) {
+                        this.handlePlayError(new Error('播放超时'));
+                    }
+                }, 10000);
+            }
+
+            handleAudioWaiting(event) {
+                console.log('音频缓冲中:', event);
+                if (this.state.playerStatus === 'playing') {
+                    this.setState({ playerStatus: 'loading' });
+                }
+            }
+
+            handleAudioCanPlay(event) {
+                console.log('音频可以播放:', event);
+                if (this.state.playerStatus === 'loading' && !this.state.isMuted) {
+                    this.setState({ playerStatus: 'playing' });
+                }
+            }
+
+            handleAudioEnded(event) {
+                console.log('音频播放结束:', event);
+                // 音频流结束，立即重新连接
+                if (!this.state.isMuted) {
+                    this.handlePlayError(new Error('音频流结束'));
+                }
+            }
+
+            handlePlayError(error) {
+                console.error('处理播放错误:', error.message);
+                
+                // 如果用户已经静音，不进行重试
+                if (this.state.isMuted) {
+                    return;
+                }
+                
+                const nextRetryCount = this.state.retryCount + 1;
+                // 重试间隔：前3次每秒一次，4-10次每5秒一次，之后每30秒一次
+                let retryDelay;
+                if (nextRetryCount <= 3) {
+                    retryDelay = 1000; // 前3次1秒
+                } else if (nextRetryCount <= 10) {
+                    retryDelay = 5000; // 4-10次5秒
+                } else {
+                    retryDelay = 30000; // 10次以后30秒
+                }
+                
+                this.setState({ 
+                    playerStatus: 'loading',
+                    retryCount: nextRetryCount,
+                    isRetrying: true
+                });
+                
+                console.log(`播放失败，${retryDelay/1000}秒后进行第${nextRetryCount}次重试...`);
+                
+                // 清除之前的重试定时器
+                if (this.state.retryTimer) {
+                    clearTimeout(this.state.retryTimer);
+                }
+                
+                const retryTimer = setTimeout(() => {
+                    if (!this.state.isMuted && this.state.fmInfo) {
+                        console.log(`执行第${nextRetryCount}次重试`);
+                        this.play();
+                    } else {
+                        this.setState({ isRetrying: false });
+                    }
+                }, retryDelay);
+                
+                this.setState({ retryTimer });
+            }
+
             stop() {
+                // 清除重试定时器
+                if (this.state.retryTimer) {
+                    clearTimeout(this.state.retryTimer);
+                }
+                
                 this.audioPlayer.pause();
                 this.setState({ 
                     playerStatus: 'stopped',
-                    isMuted: true 
+                    isMuted: true,
+                    retryCount: 0,
+                    retryTimer: null,
+                    isRetrying: false
                 });
             }
 
@@ -516,6 +663,9 @@
 
             getMuteButtonText() {
                 if (this.state.playerStatus === 'loading') {
+                    if (this.state.isRetrying && this.state.retryCount > 0) {
+                        return `重试中(${this.state.retryCount})`;
+                    }
                     return 'Loading';
                 }
                 return this.state.isMuted ? 'Unmute' : 'Mute';
@@ -586,6 +736,9 @@
         window.addEventListener('beforeunload', () => {
             if (goFM && goFM.state.timer) {
                 clearTimeout(goFM.state.timer);
+            }
+            if (goFM && goFM.state.retryTimer) {
+                clearTimeout(goFM.state.retryTimer);
             }
             if (goFM && goFM.destroyWebsocket) {
                 goFM.destroyWebsocket();
