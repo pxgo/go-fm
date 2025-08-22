@@ -9,4 +9,5 @@ func InitRoutes(e *echo.Echo) {
 	e.GET("/fm/info", GetMusicInfo)
 	e.GET("/fm/info/cover", GetMusicCover)
 	e.GET("/favicon.ico", GetMusicCover)
+	e.GET("/manifest.json", GetManifest)
 }

@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GoFM</title>
     <link rel="icon" type="image/jpg" href="/cover.jpg">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="GoFM">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GoFM">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="msapplication-TileColor" content="#1e293b">
+    <meta name="msapplication-TileImage" content="/cover.jpg">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/cover.jpg">
+    <link rel="apple-touch-icon" sizes="152x152" href="/cover.jpg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/cover.jpg">
+    <link rel="apple-touch-icon" sizes="167x167" href="/cover.jpg">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json">
     <style>
         * {
             margin: 0;
@@ -360,9 +379,55 @@
                     fmInfo: { cover, title, artist, sampleRate, bitRate, url }
                 });
 
+                // 更新PWA信息
+                this.updatePWAInfo(name, cover);
+
                 // 更新背景
                 const backgroundBlur = document.getElementById('backgroundBlur');
                 backgroundBlur.style.backgroundImage = `url(${cover})`;
+            }
+
+            updatePWAInfo(appName, iconUrl) {
+                // 更新页面标题
+                document.title = appName;
+                
+                // 更新manifest的name属性（如果需要的话）
+                // 注意：manifest.json是静态文件，无法动态更新，但我们可以更新页面的相关meta标签
+                
+                // 更新apple-mobile-web-app-title
+                let appleTitleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+                if (appleTitleMeta) {
+                    appleTitleMeta.setAttribute('content', appName);
+                }
+                
+                // 更新application-name
+                let appNameMeta = document.querySelector('meta[name="application-name"]');
+                if (appNameMeta) {
+                    appNameMeta.setAttribute('content', appName);
+                }
+
+                // 更新图标
+                this.updateIcons(iconUrl);
+            }
+
+            updateIcons(iconUrl) {
+                // 更新favicon
+                let favicon = document.querySelector('link[rel="icon"]');
+                if (favicon) {
+                    favicon.href = iconUrl;
+                }
+
+                // 更新apple-touch-icon
+                let appleIcons = document.querySelectorAll('link[rel="apple-touch-icon"]');
+                appleIcons.forEach(icon => {
+                    icon.href = iconUrl;
+                });
+
+                // 更新tile image
+                let tileMeta = document.querySelector('meta[name="msapplication-TileImage"]');
+                if (tileMeta) {
+                    tileMeta.setAttribute('content', iconUrl);
+                }
             }
 
             initWebsocket() {
@@ -728,8 +793,51 @@
 
         // 初始化应用
         let goFM;
+        let deferredPrompt;
+        
         document.addEventListener('DOMContentLoaded', () => {
             goFM = new GoFM();
+            
+            // 注册Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker注册成功:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker注册失败:', error);
+                    });
+            }
+        });
+
+        // PWA安装提示
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // 阻止Chrome 67及更早版本自动显示安装提示
+            e.preventDefault();
+            // 存储事件，以便稍后触发
+            deferredPrompt = e;
+            
+            // 可以在这里显示自定义的安装按钮
+            console.log('PWA可以安装');
+        });
+
+        // 检测PWA是否已安装
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA已安装');
+        });
+
+        // 处理PWA显示模式
+        window.addEventListener('DOMContentLoaded', () => {
+            let displayMode = 'browser';
+            if (navigator.standalone) {
+                displayMode = 'standalone-ios';
+            }
+            if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+                displayMode = 'standalone';
+            }
+            
+            // 根据显示模式调整样式
+            document.body.classList.add(`display-${displayMode}`);
         });
 
         // 清理定时器
