@@ -1,0 +1,23 @@
+# Go build / tooling
+build
+**/dist
+*.exe
+*.out
+*.test
+
+# Git
+.git
+.gitignore
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# 不需要复制的资源（最终二进制已包含 embed 文件）
+web/cover.jpg
+statics/cover.jpg
